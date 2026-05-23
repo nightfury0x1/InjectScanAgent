@@ -1,0 +1,5 @@
+# Mock server dependencies (optional)
+# Only needed if you want to run the demo vulnerable server
+# Install with: pip install -r requirements-mock.txt
+
+flask>=3.0.0

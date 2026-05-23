@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# Tool outputs — generated at runtime, not committed
+results/
+collections/
+
+# Mock server database — regenerated on each server start
+mock_server/vulnerable.db
+
+# Temporary files created by the tool
+temp_*.json
+
+# Environment / secrets — never commit API keys
+.env
+.env.*
+*.key
+
+# VS Code
+.vscode/
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# macOS
+.DS_Store
+
+# Distribution
+dist/
+build/
+*.egg-info/

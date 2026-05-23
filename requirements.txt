@@ -1,0 +1,5 @@
+# Core tool dependencies
+# Install with: pip install -r requirements.txt
+
+httpx>=0.27.0
+colorama>=0.4.6
