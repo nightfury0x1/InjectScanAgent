@@ -13,8 +13,8 @@ Both agents accept a single cURL command or an entire API collection file and au
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/yourusername/injection_agents.git
-cd injection_agents
+git clone https://github.com/yourusername/InjectScanAgent.git
+cd InjectScanAgent
 
 # 2. Create and activate a virtual environment
 python3 -m venv venv
@@ -231,7 +231,7 @@ This tool is for **authorised security testing only**. Only use it against syste
 ## Project Structure
 
 ```
-injection_agents/
+InjectScanAgent/
 ├── agents/
 │   ├── base_agent.py        # Shared agentic loop (OBSERVE→THINK→ACT→UPDATE)
 │   ├── sqli_agent.py        # Agent 1 — SQL injection detection
