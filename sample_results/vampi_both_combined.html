@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InjectScanAgent — Combined Scan Report</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont,
+                 'Segoe UI', sans-serif;
+    background: #f7fafc; color: #2d3748; font-size: 14px;
+  }
+  .header {
+    background: #1a202c; color: white; padding: 24px 32px;
+  }
+  .header h1 { font-size: 1.5em; font-weight: 700; }
+  .header .subtitle { color: #a0aec0; margin-top: 4px; }
+  .container {
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+  }
+  .meta-bar {
+    background: white; border-radius: 8px;
+    padding: 16px 24px; margin-bottom: 20px;
+    border: 1px solid #e2e8f0;
+    display: flex; flex-wrap: wrap; gap: 24px;
+  }
+  .meta-item { display: flex; flex-direction: column; }
+  .meta-label {
+    font-size: 11px; color: #718096;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .meta-value { font-weight: 600; margin-top: 2px; }
+  .status-badge {
+    display: inline-block; padding: 4px 12px;
+    border-radius: 12px; font-weight: 700;
+    font-size: 0.85em; color: white;
+    background: #e53e3e;
+  }
+  .cards {
+    display: flex; gap: 16px;
+    margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .card {
+    background: white; border-radius: 8px;
+    padding: 16px 20px; flex: 1; min-width: 120px;
+    border: 1px solid #e2e8f0;
+  }
+  .card-count { font-size: 2em; font-weight: 700; }
+  .card-label {
+    color: #718096; font-size: 0.85em;
+    text-transform: uppercase;
+  }
+  .agent-cards {
+    display: flex; gap: 16px;
+    margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .agent-card {
+    background: white; border-radius: 8px;
+    padding: 14px 20px; flex: 1; min-width: 200px;
+    border: 1px solid #e2e8f0;
+  }
+  .agent-label {
+    font-weight: 700; font-size: 1em; margin-bottom: 4px;
+  }
+  .agent-stat { color: #718096; font-size: 0.9em; }
+  .section-header {
+    font-size: 1em; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: white; padding: 12px 20px;
+    border-radius: 8px 8px 0 0; margin-top: 28px;
+    margin-bottom: 0;
+  }
+  .section-title {
+    font-size: 1em; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: #4a5568; margin: 24px 0 12px;
+  }
+  .techniques-table {
+    width: 100%; border-collapse: collapse;
+    background: white; border-radius: 8px;
+    overflow: hidden; border: 1px solid #e2e8f0;
+    margin-bottom: 20px;
+  }
+  .techniques-table th {
+    background: #edf2f7; padding: 10px 16px;
+    text-align: left; font-size: 0.85em;
+    text-transform: uppercase; color: #4a5568;
+  }
+  .techniques-table td {
+    padding: 10px 16px; border-top: 1px solid #e2e8f0;
+  }
+  .finding {
+    border-radius: 8px; margin-bottom: 12px;
+    border: 1px solid #e2e8f0; overflow: hidden;
+  }
+  .finding-header {
+    padding: 14px 18px; cursor: pointer;
+    display: flex; align-items: center; gap: 12px;
+    user-select: none;
+  }
+  .finding-header:hover { background: rgba(0,0,0,0.03); }
+  .finding-sev {
+    font-weight: 700; font-size: 0.85em; min-width: 80px;
+  }
+  .finding-title { flex: 1; font-weight: 600; }
+  .toggle-icon { color: #a0aec0; transition: transform 0.2s; }
+  .finding-body { padding: 0 18px 18px; display: none; }
+  .detail-table {
+    width: 100%; border-collapse: collapse;
+  }
+  .detail-table td {
+    padding: 6px 12px; border-bottom: 1px solid #edf2f7;
+    vertical-align: top;
+  }
+  .detail-table td:first-child {
+    font-weight: 600; color: #4a5568;
+    width: 140px; white-space: nowrap;
+  }
+  code {
+    background: #edf2f7; padding: 2px 6px;
+    border-radius: 4px; font-size: 0.85em;
+    word-break: break-all;
+  }
+  .payload { background: #fef3c7; color: #92400e; }
+  .fix-cell { color: #276749; }
+  .empty-section {
+    background: white; border-radius: 8px;
+    padding: 24px; text-align: center;
+    color: #38a169; border: 1px solid #e2e8f0;
+    margin-bottom: 12px;
+  }
+  footer {
+    text-align: center; color: #a0aec0;
+    padding: 24px; font-size: 0.85em;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔍 InjectScanAgent — Combined Scan Report</h1>
+  <div class="subtitle">Generated: 2026-05-24 19:05:41</div>
+</div>
+
+<div class="container">
+
+  <!-- Meta bar -->
+  <div class="meta-bar">
+    <div class="meta-item">
+      <span class="meta-label">Target</span>
+      <span class="meta-value">../labs/vampi/vampi.json</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Total Attempts</span>
+      <span class="meta-value">199</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Total Findings</span>
+      <span class="meta-value">8</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Status</span>
+      <span class="meta-value">
+        <span class="status-badge">VULNERABLE</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Severity cards -->
+  <div class="cards">
+        <div class="card" style="border-left:4px solid #e53e3e">
+            <div class="card-count" style="color:#e53e3e">0</div>
+            <div class="card-label">CRITICAL</div>
+        </div>
+        <div class="card" style="border-left:4px solid #dd6b20">
+            <div class="card-count" style="color:#dd6b20">2</div>
+            <div class="card-label">HIGH</div>
+        </div>
+        <div class="card" style="border-left:4px solid #d69e2e">
+            <div class="card-count" style="color:#d69e2e">6</div>
+            <div class="card-label">MEDIUM</div>
+        </div>
+        <div class="card" style="border-left:4px solid #3182ce">
+            <div class="card-count" style="color:#3182ce">0</div>
+            <div class="card-label">LOW</div>
+        </div></div>
+
+  <!-- Agent breakdown -->
+  <div class="section-title">Agent Breakdown</div>
+  <div class="agent-cards">
+        <div class="agent-card" style="border-left:4px solid #3182ce">
+            <div class="agent-label">SQLi Agent</div>
+            <div class="agent-stat">
+                8 findings
+                / 117 attempts
+            </div>
+        </div>
+        <div class="agent-card" style="border-left:4px solid #e53e3e">
+            <div class="agent-label">NoSQLi Agent</div>
+            <div class="agent-stat">
+                0 findings
+                / 82 attempts
+            </div>
+        </div></div>
+
+  <!-- Techniques -->
+  <div class="section-title">Techniques Detected</div>
+  <table class="techniques-table">
+    <thead>
+      <tr><th>Technique</th><th>Findings</th></tr>
+    </thead>
+    <tbody>
+      
+        <tr><td>boolean_blind</td><td><strong>3</strong></td></tr>
+        <tr><td>error_based</td><td><strong>1</strong></td></tr>
+        <tr><td>stacked</td><td><strong>3</strong></td></tr>
+        <tr><td>union</td><td><strong>1</strong></td></tr>
+    </tbody>
+  </table>
+
+  <!-- SQLi findings section -->
+  
+    <div class="section-header"
+         style="background:#3182ce; margin-top:28px;">
+        SQLi Agent Findings (8 finding(s))
+    </div>
+    <div class="finding"
+         style="border-left:4px solid #dd6b20; background:#fffaf0">
+        <div class="finding-header" onclick="toggle(this)">
+            <span class="finding-sev" style="color:#dd6b20">
+                ● HIGH
+            </span>
+            <span class="finding-title">
+                #1 — SQL Error Leaked in Response
+            </span>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="finding-body">
+            <table class="detail-table">
+                <tr><td>URL</td>
+                    <td><code>http://127.0.0.1:5001/users/v1/'</code></td></tr>
+                <tr><td>Method</td>
+                    <td>GET</td></tr>
+                <tr><td>Injection Point</td>
+                    <td><code>path.2</code>
+                    </td></tr>
+                <tr><td>Technique</td><td>error_based</td></tr>
+                <tr><td>Signal</td>
+                    <td>error</td></tr>
+                <tr><td>Payload</td>
+                    <td><code class="payload">'</code>
+                    </td></tr>
+                <tr><td>Evidence</td>
+                    <td>Error pattern matched: 'sqlite3.OperationalError'</td></tr>
+                <tr><td>Status Code</td>
+                    <td>500</td></tr>
+                <tr><td>Response Time</td>
+                    <td>0.031s</td></tr>
+                <tr><td>Fix</td>
+                    <td class="fix-cell">
+                        Use parameterised queries (prepared statements). Never expose raw database errors to clients. Implement a generic error handler.
+                    </td></tr>
+            </table>
+        </div>
+    </div>
+    <div class="finding"
+         style="border-left:4px solid #dd6b20; background:#fffaf0">
+        <div class="finding-header" onclick="toggle(this)">
+            <span class="finding-sev" style="color:#dd6b20">
+                ● HIGH
+            </span>
+            <span class="finding-title">
+                #2 — SQL Error Leaked in Response
+            </span>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="finding-body">
+            <table class="detail-table">
+                <tr><td>URL</td>
+                    <td><code>http://127.0.0.1:5001/users/v1/' UNION SELECT NULL--</code></td></tr>
+                <tr><td>Method</td>
+                    <td>GET</td></tr>
+                <tr><td>Injection Point</td>
+                    <td><code>path.2</code>
+                    </td></tr>
+                <tr><td>Technique</td><td>union</td></tr>
+                <tr><td>Signal</td>
+                    <td>error</td></tr>
+                <tr><td>Payload</td>
+                    <td><code class="payload">' UNION SELECT NULL--</code>
+                    </td></tr>
+                <tr><td>Evidence</td>
+                    <td>Error pattern matched: 'sqlite3.OperationalError'</td></tr>
+                <tr><td>Status Code</td>
+                    <td>500</td></tr>
+                <tr><td>Response Time</td>
+                    <td>0.032s</td></tr>
+                <tr><td>Fix</td>
+                    <td class="fix-cell">
+                        Use parameterised queries (prepared statements). Never expose raw database errors to clients. Implement a generic error handler.
+                    </td></tr>
+            </table>
+        </div>
+    </div>
+    <div class="finding"
+         style="border-left:4px solid #d69e2e; background:#fffff0">
+        <div class="finding-header" onclick="toggle(this)">
+            <span class="finding-sev" style="color:#d69e2e">
+                ● MEDIUM
+            </span>
+            <span class="finding-title">
+                #3 — Boolean Blind SQL Injection — Response Size Change
+            </span>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="finding-body">
+            <table class="detail-table">
+                <tr><td>URL</td>
+                    <td><code>http://127.0.0.1:5001/users/v1/1 AND SUBSTRING((SELECT username FROM users LIMIT 1),1,1)='a'</code></td></tr>
+                <tr><td>Method</td>
+                    <td>GET</td></tr>
+                <tr><td>Injection Point</td>
+                    <td><code>path.2</code>
+                    </td></tr>
+                <tr><td>Technique</td><td>boolean_blind</td></tr>
+                <tr><td>Signal</td>
+                    <td>content_change</td></tr>
+                <tr><td>Payload</td>
+                    <td><code class="payload">1 AND SUBSTRING((SELECT username FROM users LIMIT 1),1,1)='a'</code>
+                    </td></tr>
+                <tr><td>Evidence</td>
+                    <td>Baseline response: 50 chars. Injected response: 47119 chars (94138% change).</td></tr>
+                <tr><td>Status Code</td>
+                    <td>500</td></tr>
+                <tr><td>Response Time</td>
+                    <td>0.029s</td></tr>
+                <tr><td>Fix</td>
+                    <td class="fix-cell">
+                        Use parameterised queries. Investigate why injected payloads alter the response size.
+                    </td></tr>
+            </table>
+        </div>
+    </div>
+    <div class="finding"
+         style="border-left:4px solid #d69e2e; background:#fffff0">
+        <div class="finding-header" onclick="toggle(this)">
+            <span class="finding-sev" style="color:#d69e2e">
+                ● MEDIUM
+            </span>
+            <span class="finding-title">
+                #4 — Boolean Blind SQL Injection — Response Size Change
+            </span>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="finding-body">
+            <table class="detail-table">
+                <tr><td>URL</td>
+                    <td><code>http://127.0.0.1:5001/users/v1/1; INSERT INTO users VALUES(99,'hacked','hacked','h@h.com','admin')--</code></td></tr>
+                <tr><td>Method</td>
+                    <td>GET</td></tr>
+                <tr><td>Injection Point</td>
+                    <td><code>path.2</code>
+                    </td></tr>
+                <tr><td>Technique</td><td>stacked</td></tr>
+                <tr><td>Signal</td>
+                    <td>content_change</td></tr>
+                <tr><td>Payload</td>
+                    <td><code class="payload">1; INSERT INTO users VALUES(99,'hacked','hacked','h@h.com','admin')--</code>
+                    </td></tr>
+                <tr><td>Evidence</td>
+                    <td>Baseline response: 50 chars. Injected response: 47265 chars (94430% change).</td></tr>
+                <tr><td>Status Code</td>
+                    <td>500</td></tr>
+                <tr><td>Response Time</td>
+                    <td>0.031s</td></tr>
+                <tr><td>Fix</td>
+                    <td class="fix-cell">
+                        Use parameterised queries. Investigate why injected payloads alter the response size.
+                    </td></tr>
+            </table>
+        </div>
+    </div>
+    <div class="finding"
+         style="border-left:4px solid #d69e2e; background:#fffff0">
+        <div class="finding-header" onclick="toggle(this)">
+            <span class="finding-sev" style="color:#d69e2e">
+                ● MEDIUM
+            </span>
+            <span class="finding-title">
+                #5 — Boolean Blind SQL Injection — Response Size Change
+            </span>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="finding-body">
+            <table class="detail-table">
+                <tr><td>URL</td>
+                    <td><code>http://127.0.0.1:5001/users/v1/login</code></td></tr>
+                <tr><td>Method</td>
+                    <td>POST</td></tr>
+                <tr><td>Injection Point</td>
+                    <td><code>body.username</code>
+                    </td></tr>
+                <tr><td>Technique</td><td>boolean_blind</td></tr>
+                <tr><td>Signal</td>
+                    <td>content_change</td></tr>
+                <tr><td>Payload</td>
+                    <td><code class="payload">1 AND 1=1</code>
+                    </td></tr>
+                <tr><td>Evidence</td>
+                    <td>Baseline response: 228 chars. Injected response: 56 chars (75% change).</td></tr>
+                <tr><td>Status Code</td>
+                    <td>200</td></tr>
+                <tr><td>Response Time</td>
+                    <td>0.019s</td></tr>
+                <tr><td>Fix</td>
+                    <td class="fix-cell">
+                        Use parameterised queries. Investigate why injected payloads alter the response size.
+                    </td></tr>
+            </table>
+        </div>
+    </div>
+    <div class="finding"
+         style="border-left:4px solid #d69e2e; background:#fffff0">
+        <div class="finding-header" onclick="toggle(this)">
+            <span class="finding-sev" style="color:#d69e2e">
+                ● MEDIUM
+            </span>
+            <span class="finding-title">
+                #6 — Boolean Blind SQL Injection — Response Size Change
+            </span>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="finding-body">
+            <table class="detail-table">
+                <tr><td>URL</td>
+                    <td><code>http://127.0.0.1:5001/users/v1/login</code></td></tr>
+                <tr><td>Method</td>
+                    <td>POST</td></tr>
+                <tr><td>Injection Point</td>
+                    <td><code>body.username</code>
+                    </td></tr>
+                <tr><td>Technique</td><td>stacked</td></tr>
+                <tr><td>Signal</td>
+                    <td>content_change</td></tr>
+                <tr><td>Payload</td>
+                    <td><code class="payload">1; DROP TABLE users--</code>
+                    </td></tr>
+                <tr><td>Evidence</td>
+                    <td>Baseline response: 228 chars. Injected response: 56 chars (75% change).</td></tr>
+                <tr><td>Status Code</td>
+                    <td>200</td></tr>
+                <tr><td>Response Time</td>
+                    <td>0.019s</td></tr>
+                <tr><td>Fix</td>
+                    <td class="fix-cell">
+                        Use parameterised queries. Investigate why injected payloads alter the response size.
+                    </td></tr>
+            </table>
+        </div>
+    </div>
+    <div class="finding"
+         style="border-left:4px solid #d69e2e; background:#fffff0">
+        <div class="finding-header" onclick="toggle(this)">
+            <span class="finding-sev" style="color:#d69e2e">
+                ● MEDIUM
+            </span>
+            <span class="finding-title">
+                #7 — Boolean Blind SQL Injection — Response Size Change
+            </span>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="finding-body">
+            <table class="detail-table">
+                <tr><td>URL</td>
+                    <td><code>http://127.0.0.1:5001/users/v1/login</code></td></tr>
+                <tr><td>Method</td>
+                    <td>POST</td></tr>
+                <tr><td>Injection Point</td>
+                    <td><code>body.password</code>
+                    </td></tr>
+                <tr><td>Technique</td><td>boolean_blind</td></tr>
+                <tr><td>Signal</td>
+                    <td>content_change</td></tr>
+                <tr><td>Payload</td>
+                    <td><code class="payload">1 AND 1=1</code>
+                    </td></tr>
+                <tr><td>Evidence</td>
+                    <td>Baseline response: 228 chars. Injected response: 80 chars (65% change).</td></tr>
+                <tr><td>Status Code</td>
+                    <td>200</td></tr>
+                <tr><td>Response Time</td>
+                    <td>0.019s</td></tr>
+                <tr><td>Fix</td>
+                    <td class="fix-cell">
+                        Use parameterised queries. Investigate why injected payloads alter the response size.
+                    </td></tr>
+            </table>
+        </div>
+    </div>
+    <div class="finding"
+         style="border-left:4px solid #d69e2e; background:#fffff0">
+        <div class="finding-header" onclick="toggle(this)">
+            <span class="finding-sev" style="color:#d69e2e">
+                ● MEDIUM
+            </span>
+            <span class="finding-title">
+                #8 — Boolean Blind SQL Injection — Response Size Change
+            </span>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="finding-body">
+            <table class="detail-table">
+                <tr><td>URL</td>
+                    <td><code>http://127.0.0.1:5001/users/v1/login</code></td></tr>
+                <tr><td>Method</td>
+                    <td>POST</td></tr>
+                <tr><td>Injection Point</td>
+                    <td><code>body.password</code>
+                    </td></tr>
+                <tr><td>Technique</td><td>stacked</td></tr>
+                <tr><td>Signal</td>
+                    <td>content_change</td></tr>
+                <tr><td>Payload</td>
+                    <td><code class="payload">1; DROP TABLE users--</code>
+                    </td></tr>
+                <tr><td>Evidence</td>
+                    <td>Baseline response: 228 chars. Injected response: 80 chars (65% change).</td></tr>
+                <tr><td>Status Code</td>
+                    <td>200</td></tr>
+                <tr><td>Response Time</td>
+                    <td>0.018s</td></tr>
+                <tr><td>Fix</td>
+                    <td class="fix-cell">
+                        Use parameterised queries. Investigate why injected payloads alter the response size.
+                    </td></tr>
+            </table>
+        </div>
+    </div>
+
+  <!-- NoSQLi findings section -->
+  
+    <div class="section-header"
+         style="background:#e53e3e; margin-top:28px;">
+        NoSQLi Agent Findings (0 finding(s))
+    </div>
+    <div class="empty-section">
+        ✅ No vulnerabilities detected by this agent.
+    </div>
+
+</div>
+
+<footer>
+  InjectScanAgent — For authorised security testing only
+</footer>
+
+<script>
+function toggle(header) {
+  var body = header.nextElementSibling;
+  var icon = header.querySelector('.toggle-icon');
+  if (body.style.display === 'block') {
+    body.style.display = 'none';
+    icon.style.transform = 'rotate(0deg)';
+  } else {
+    body.style.display = 'block';
+    icon.style.transform = 'rotate(180deg)';
+  }
+}
+document.querySelectorAll('.finding').forEach(function(f) {
+  if (f.querySelector('.finding-sev')
+       .textContent.includes('CRITICAL')) {
+    f.querySelector('.finding-body').style.display = 'block';
+    f.querySelector('.toggle-icon').style.transform =
+      'rotate(180deg)';
+  }
+});
+</script>
+</body>
+</html>

@@ -9,6 +9,30 @@ Both agents accept a single cURL command or an entire API collection file and au
 
 ---
 
+## Project Structure
+
+```
+InjectScanAgent/
+├── agents/
+│   ├── base_agent.py        # Shared agentic loop (OBSERVE→THINK→ACT→UPDATE)
+│   ├── sqli_agent.py        # Agent 1 — SQL injection detection
+│   └── nosqli_agent.py      # Agent 2 — NoSQL injection detection
+├── tools/
+│   ├── curl_parser.py       # Parse cURL commands into request dicts
+│   ├── collection_parser.py # Parse Postman / custom JSON collections
+│   ├── endpoint_detector.py # Detect REST vs GraphQL automatically
+│   ├── payload_library.py   # 39 SQLi + 24 NoSQLi payloads
+│   ├── injector.py          # Craft and send injection requests
+│   ├── response_analyser.py # Detect vulnerability signals in responses
+│   ├── reporter.py          # Colour-coded terminal report
+│   └── file_reporter.py     # JSON and HTML file output
+├── mock_server/             # Optional — demo vulnerable server
+├── sample_results/          # Pre-generated HTML reports for reference
+├── InjectScanAgent.py       # Entry point
+├── requirements.txt         # Core dependencies
+└── requirements-mock.txt    # Mock server dependency
+```
+
 ## Quick Start
 
 ```bash
@@ -222,31 +246,23 @@ The mock server exposes intentionally vulnerable REST and GraphQL endpoints back
 
 ---
 
+## Sample Reports
+
+Pre-generated HTML scan reports are available in `sample_results/` for immediate reference:
+
+| File | Description |
+|---|---|
+| `mock_rest_sqli_sqli.html` | SQLi agent on REST endpoints |
+| `mock_gql_sqli_sqli.html` | SQLi agent on GraphQL endpoints |
+| `mock_rest_nosqli_nosqli.html` | NoSQLi agent on REST endpoints |
+| `mock_full_both_combined.html` | Both agents — full combined report |
+| `vampi_sqli_sqli.html` | SQLi agent on VAmPI (Intentionally vulnerable API) |
+| `vampi_both_combined.html` | Both agents on VAmPI |
+
+---
+
 ## Legal Notice
 
 This tool is for **authorised security testing only**. Only use it against systems you own or have explicit written permission to test. Unauthorised security testing is illegal in most jurisdictions. The authors accept no responsibility for misuse.
 
 ---
-
-## Project Structure
-
-```
-InjectScanAgent/
-├── agents/
-│   ├── base_agent.py        # Shared agentic loop (OBSERVE→THINK→ACT→UPDATE)
-│   ├── sqli_agent.py        # Agent 1 — SQL injection detection
-│   └── nosqli_agent.py      # Agent 2 — NoSQL injection detection
-├── tools/
-│   ├── curl_parser.py       # Parse cURL commands into request dicts
-│   ├── collection_parser.py # Parse Postman / custom JSON collections
-│   ├── endpoint_detector.py # Detect REST vs GraphQL automatically
-│   ├── payload_library.py   # All SQLi and NoSQLi payloads
-│   ├── injector.py          # Craft and send injection requests
-│   ├── response_analyser.py # Detect vulnerability signals in responses
-│   ├── reporter.py          # Colour-coded terminal report
-│   └── file_reporter.py     # JSON and HTML file output
-├── mock_server/             # Optional — demo vulnerable server
-├── InjectScanAgent.py                  # Entry point
-├── requirements.txt         # Core dependencies
-└── requirements-mock.txt    # Mock server dependency
-```

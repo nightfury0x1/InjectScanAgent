@@ -15,6 +15,9 @@ ENV/
 results/
 collections/
 
+# Sample outputs — committed intentionally for demonstration
+# sample_results/ is NOT ignored
+
 # Mock server database — regenerated on each server start
 mock_server/vulnerable.db
 
