@@ -47,6 +47,9 @@ import sys
 import os
 import time
 import datetime
+# Stores the last agent's total_tested count
+# Used to pass attempt counts to the combined report
+_last_agent_tested = 0
 
 
 # ─────────────────────────────────────────────────────────────
@@ -295,20 +298,18 @@ def check_server(url: str = "http://127.0.0.1:5000/health") -> bool:
 
 def build_output_path(base_path: str | None, agent_name: str) -> str | None:
     """
-    Build the full output path for this agent's report.
+    Build the output path suffix for this agent's report.
 
-    If base_path is "results/scan":
-      SQLi Agent  → "results/scan_sqli"
-      NoSQLi Agent → "results/scan_nosqli"
+    SQLi Agent   → base_path_sqli
+    NoSQLi Agent → base_path_nosqli
 
-    If base_path is None, returns None (no file output).
+    FIX: Check for 'nosql' first since 'nosqli' also contains 'sqli'.
+    Checking 'sqli' first caused NoSQLi to always get _sqli suffix.
     """
     if not base_path:
         return None
-
-    suffix = "sqli" if "sqli" in agent_name.lower() else "nosqli"
-
-    # If running both agents, differentiate the filenames
+    # Check nosql FIRST — it is the more specific string
+    suffix = "nosqli" if "nosql" in agent_name.lower() else "sqli"
     return f"{base_path}_{suffix}"
 
 
@@ -383,6 +384,8 @@ def run_sqli_agent(input_str: str, output_path: str | None,
         except OSError:
             pass
 
+    global _last_agent_tested
+    _last_agent_tested = agent.state.get("total_tested", 0)
     return findings
 
 
@@ -416,6 +419,8 @@ def run_nosqli_agent(input_str: str, output_path: str | None,
         except OSError:
             pass
 
+    global _last_agent_tested
+    _last_agent_tested = agent.state.get("total_tested", 0)
     return findings
 
 
@@ -614,18 +619,35 @@ def main():
 
     elif args.agent == "both":
         print("  Running SQLi Agent first...\n")
-        sqli_out  = build_output_path(args.output, "SQLi Agent")
+        sqli_out      = None   # no individual file for both mode
         sqli_findings = run_sqli_agent(
             input_str, sqli_out, formats, config
         )
+        sqli_tested   = 0
+        # Capture tested count from agent state via a small helper
+        sqli_tested   = _last_agent_tested
 
         print("\n  Running NoSQLi Agent next...\n")
-        nosqli_out = build_output_path(args.output, "NoSQLi Agent")
+        nosqli_out      = None
         nosqli_findings = run_nosqli_agent(
             input_str, nosqli_out, formats, config
         )
+        nosqli_tested   = _last_agent_tested
 
         findings = sqli_findings + nosqli_findings
+
+        # Save combined report if output path specified
+        if args.output:
+            from tools.file_reporter import save_combined_report
+            save_combined_report(
+                sqli_findings   = sqli_findings,
+                nosqli_findings = nosqli_findings,
+                sqli_tested     = sqli_tested,
+                nosqli_tested   = nosqli_tested,
+                target_info     = input_str,
+                output_path     = args.output,
+                formats         = formats,
+            )
     
     elapsed = time.time() - start_time
 

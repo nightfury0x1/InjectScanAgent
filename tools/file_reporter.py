@@ -439,3 +439,489 @@ document.querySelectorAll('.finding').forEach(function(f) {{
 </script>
 </body>
 </html>"""
+# ─────────────────────────────────────────────────────────────
+# Combined report for --agent both
+# ─────────────────────────────────────────────────────────────
+
+def save_combined_report(
+    sqli_findings:   list[dict],
+    nosqli_findings: list[dict],
+    sqli_tested:     int,
+    nosqli_tested:   int,
+    target_info:     str,
+    output_path:     str,
+    formats:         list[str] | None = None,
+) -> list[str]:
+    """
+    Save a combined report containing both SQLi and NoSQLi findings
+    into a single file. Used when --agent both is specified.
+
+    Parameters:
+      sqli_findings   — findings from the SQLi agent
+      nosqli_findings — findings from the NoSQLi agent
+      sqli_tested     — injection attempts by SQLi agent
+      nosqli_tested   — injection attempts by NoSQLi agent
+      target_info     — cURL string or collection file path
+      output_path     — file path WITHOUT extension
+      formats         — ["json"], ["html"], or ["json", "html"]
+
+    Returns list of file paths written.
+    """
+    if formats is None:
+        formats = ["json", "html"]
+
+    out_dir = os.path.dirname(output_path)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+
+    all_findings  = sqli_findings + nosqli_findings
+    total_tested  = sqli_tested + nosqli_tested
+    written       = []
+
+    meta = _build_combined_meta(
+        sqli_findings, nosqli_findings,
+        sqli_tested, nosqli_tested, target_info
+    )
+
+    if "json" in formats:
+        path = _save_combined_json(
+            sqli_findings, nosqli_findings, meta, output_path
+        )
+        written.append(path)
+
+    if "html" in formats:
+        path = _save_combined_html(
+            sqli_findings, nosqli_findings, meta, output_path
+        )
+        written.append(path)
+
+    return written
+
+
+def _build_combined_meta(sqli_findings, nosqli_findings,
+                          sqli_tested, nosqli_tested,
+                          target_info) -> dict:
+    """Build metadata for the combined report."""
+    all_findings = sqli_findings + nosqli_findings
+    counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
+    techniques = {}
+    urls = set()
+
+    for f in all_findings:
+        sev  = f.get("severity", "LOW")
+        tech = f.get("payload", {}).get("technique", "unknown")
+        url  = f.get("url", "")
+        counts[sev] = counts.get(sev, 0) + 1
+        techniques[tech] = techniques.get(tech, 0) + 1
+        urls.add(url)
+
+    return {
+        "target":            target_info,
+        "scan_time":         datetime.datetime.now().isoformat(),
+        "sqli_tested":       sqli_tested,
+        "nosqli_tested":     nosqli_tested,
+        "total_tested":      sqli_tested + nosqli_tested,
+        "sqli_findings":     len(sqli_findings),
+        "nosqli_findings":   len(nosqli_findings),
+        "total_findings":    len(all_findings),
+        "severity_counts":   counts,
+        "techniques":        techniques,
+        "urls_scanned":      sorted(urls),
+        "overall_status":    "VULNERABLE" if all_findings else "CLEAN",
+    }
+
+
+def _save_combined_json(sqli_findings, nosqli_findings,
+                         meta, output_path) -> str:
+    """Write combined findings to a single JSON file."""
+    path = f"{output_path}_combined.json"
+
+    def clean(findings):
+        result = []
+        for f in findings:
+            cf      = dict(f)
+            payload = dict(cf.get("payload", {}))
+            payload["value"] = str(payload.get("value", ""))
+            cf["payload"] = payload
+            result.append(cf)
+        return result
+
+    output = {
+        "meta":           meta,
+        "sqli_findings":  clean(sqli_findings),
+        "nosqli_findings": clean(nosqli_findings),
+    }
+
+    with open(path, "w", encoding="utf-8") as fp:
+        json.dump(output, fp, indent=2, default=str)
+
+    print(f"  [✓] Combined JSON report saved : {path}")
+    return path
+
+
+def _save_combined_html(sqli_findings, nosqli_findings,
+                         meta, output_path) -> str:
+    """Write a single combined HTML report for both agents."""
+    path = f"{output_path}_combined.html"
+
+    with open(path, "w", encoding="utf-8") as fp:
+        fp.write(_render_combined_html(sqli_findings,
+                                       nosqli_findings, meta))
+
+    print(f"  [✓] Combined HTML report saved : {path}")
+    return path
+
+
+def _render_combined_html(sqli_findings: list[dict],
+                           nosqli_findings: list[dict],
+                           meta: dict) -> str:
+    """Render the full combined HTML report."""
+
+    scan_time  = meta["scan_time"].replace("T", " ")[:19]
+    status_col = "#e53e3e" if meta["total_findings"] else "#38a169"
+    status_txt = meta["overall_status"]
+
+    # ── Summary cards ─────────────────────────────────────────
+    counts     = meta["severity_counts"]
+    cards_html = ""
+    for sev in ["CRITICAL", "HIGH", "MEDIUM", "LOW"]:
+        count = counts.get(sev, 0)
+        col   = _severity_colour(sev)
+        cards_html += f"""
+        <div class="card" style="border-left:4px solid {col}">
+            <div class="card-count" style="color:{col}">{count}</div>
+            <div class="card-label">{sev}</div>
+        </div>"""
+
+    # ── Agent summary cards ───────────────────────────────────
+    agent_cards = f"""
+        <div class="agent-card" style="border-left:4px solid #3182ce">
+            <div class="agent-label">SQLi Agent</div>
+            <div class="agent-stat">
+                {len(sqli_findings)} findings
+                / {meta['sqli_tested']} attempts
+            </div>
+        </div>
+        <div class="agent-card" style="border-left:4px solid #e53e3e">
+            <div class="agent-label">NoSQLi Agent</div>
+            <div class="agent-stat">
+                {len(nosqli_findings)} findings
+                / {meta['nosqli_tested']} attempts
+            </div>
+        </div>"""
+
+    # ── Techniques table ──────────────────────────────────────
+    tech_rows = ""
+    for tech, count in sorted(meta["techniques"].items()):
+        tech_rows += f"""
+        <tr><td>{tech}</td><td><strong>{count}</strong></td></tr>"""
+
+    # ── Render findings sections ──────────────────────────────
+    sqli_section   = _render_findings_section(
+        sqli_findings, "SQLi Agent Findings", "#3182ce"
+    )
+    nosqli_section = _render_findings_section(
+        nosqli_findings, "NoSQLi Agent Findings", "#e53e3e"
+    )
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InjectScanAgent — Combined Scan Report</title>
+<style>
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  body {{
+    font-family: -apple-system, BlinkMacSystemFont,
+                 'Segoe UI', sans-serif;
+    background: #f7fafc; color: #2d3748; font-size: 14px;
+  }}
+  .header {{
+    background: #1a202c; color: white; padding: 24px 32px;
+  }}
+  .header h1 {{ font-size: 1.5em; font-weight: 700; }}
+  .header .subtitle {{ color: #a0aec0; margin-top: 4px; }}
+  .container {{
+    max-width: 1100px; margin: 0 auto; padding: 24px;
+  }}
+  .meta-bar {{
+    background: white; border-radius: 8px;
+    padding: 16px 24px; margin-bottom: 20px;
+    border: 1px solid #e2e8f0;
+    display: flex; flex-wrap: wrap; gap: 24px;
+  }}
+  .meta-item {{ display: flex; flex-direction: column; }}
+  .meta-label {{
+    font-size: 11px; color: #718096;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }}
+  .meta-value {{ font-weight: 600; margin-top: 2px; }}
+  .status-badge {{
+    display: inline-block; padding: 4px 12px;
+    border-radius: 12px; font-weight: 700;
+    font-size: 0.85em; color: white;
+    background: {status_col};
+  }}
+  .cards {{
+    display: flex; gap: 16px;
+    margin-bottom: 20px; flex-wrap: wrap;
+  }}
+  .card {{
+    background: white; border-radius: 8px;
+    padding: 16px 20px; flex: 1; min-width: 120px;
+    border: 1px solid #e2e8f0;
+  }}
+  .card-count {{ font-size: 2em; font-weight: 700; }}
+  .card-label {{
+    color: #718096; font-size: 0.85em;
+    text-transform: uppercase;
+  }}
+  .agent-cards {{
+    display: flex; gap: 16px;
+    margin-bottom: 20px; flex-wrap: wrap;
+  }}
+  .agent-card {{
+    background: white; border-radius: 8px;
+    padding: 14px 20px; flex: 1; min-width: 200px;
+    border: 1px solid #e2e8f0;
+  }}
+  .agent-label {{
+    font-weight: 700; font-size: 1em; margin-bottom: 4px;
+  }}
+  .agent-stat {{ color: #718096; font-size: 0.9em; }}
+  .section-header {{
+    font-size: 1em; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: white; padding: 12px 20px;
+    border-radius: 8px 8px 0 0; margin-top: 28px;
+    margin-bottom: 0;
+  }}
+  .section-title {{
+    font-size: 1em; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: #4a5568; margin: 24px 0 12px;
+  }}
+  .techniques-table {{
+    width: 100%; border-collapse: collapse;
+    background: white; border-radius: 8px;
+    overflow: hidden; border: 1px solid #e2e8f0;
+    margin-bottom: 20px;
+  }}
+  .techniques-table th {{
+    background: #edf2f7; padding: 10px 16px;
+    text-align: left; font-size: 0.85em;
+    text-transform: uppercase; color: #4a5568;
+  }}
+  .techniques-table td {{
+    padding: 10px 16px; border-top: 1px solid #e2e8f0;
+  }}
+  .finding {{
+    border-radius: 8px; margin-bottom: 12px;
+    border: 1px solid #e2e8f0; overflow: hidden;
+  }}
+  .finding-header {{
+    padding: 14px 18px; cursor: pointer;
+    display: flex; align-items: center; gap: 12px;
+    user-select: none;
+  }}
+  .finding-header:hover {{ background: rgba(0,0,0,0.03); }}
+  .finding-sev {{
+    font-weight: 700; font-size: 0.85em; min-width: 80px;
+  }}
+  .finding-title {{ flex: 1; font-weight: 600; }}
+  .toggle-icon {{ color: #a0aec0; transition: transform 0.2s; }}
+  .finding-body {{ padding: 0 18px 18px; display: none; }}
+  .detail-table {{
+    width: 100%; border-collapse: collapse;
+  }}
+  .detail-table td {{
+    padding: 6px 12px; border-bottom: 1px solid #edf2f7;
+    vertical-align: top;
+  }}
+  .detail-table td:first-child {{
+    font-weight: 600; color: #4a5568;
+    width: 140px; white-space: nowrap;
+  }}
+  code {{
+    background: #edf2f7; padding: 2px 6px;
+    border-radius: 4px; font-size: 0.85em;
+    word-break: break-all;
+  }}
+  .payload {{ background: #fef3c7; color: #92400e; }}
+  .fix-cell {{ color: #276749; }}
+  .empty-section {{
+    background: white; border-radius: 8px;
+    padding: 24px; text-align: center;
+    color: #38a169; border: 1px solid #e2e8f0;
+    margin-bottom: 12px;
+  }}
+  footer {{
+    text-align: center; color: #a0aec0;
+    padding: 24px; font-size: 0.85em;
+  }}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔍 InjectScanAgent — Combined Scan Report</h1>
+  <div class="subtitle">Generated: {scan_time}</div>
+</div>
+
+<div class="container">
+
+  <!-- Meta bar -->
+  <div class="meta-bar">
+    <div class="meta-item">
+      <span class="meta-label">Target</span>
+      <span class="meta-value">{meta['target'][:80]}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Total Attempts</span>
+      <span class="meta-value">{meta['total_tested']}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Total Findings</span>
+      <span class="meta-value">{meta['total_findings']}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">Status</span>
+      <span class="meta-value">
+        <span class="status-badge">{status_txt}</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Severity cards -->
+  <div class="cards">{cards_html}</div>
+
+  <!-- Agent breakdown -->
+  <div class="section-title">Agent Breakdown</div>
+  <div class="agent-cards">{agent_cards}</div>
+
+  <!-- Techniques -->
+  <div class="section-title">Techniques Detected</div>
+  <table class="techniques-table">
+    <thead>
+      <tr><th>Technique</th><th>Findings</th></tr>
+    </thead>
+    <tbody>
+      {tech_rows if tech_rows
+       else '<tr><td colspan="2">None detected</td></tr>'}
+    </tbody>
+  </table>
+
+  <!-- SQLi findings section -->
+  {sqli_section}
+
+  <!-- NoSQLi findings section -->
+  {nosqli_section}
+
+</div>
+
+<footer>
+  InjectScanAgent — For authorised security testing only
+</footer>
+
+<script>
+function toggle(header) {{
+  var body = header.nextElementSibling;
+  var icon = header.querySelector('.toggle-icon');
+  if (body.style.display === 'block') {{
+    body.style.display = 'none';
+    icon.style.transform = 'rotate(0deg)';
+  }} else {{
+    body.style.display = 'block';
+    icon.style.transform = 'rotate(180deg)';
+  }}
+}}
+document.querySelectorAll('.finding').forEach(function(f) {{
+  if (f.querySelector('.finding-sev')
+       .textContent.includes('CRITICAL')) {{
+    f.querySelector('.finding-body').style.display = 'block';
+    f.querySelector('.toggle-icon').style.transform =
+      'rotate(180deg)';
+  }}
+}});
+</script>
+</body>
+</html>"""
+
+
+def _render_findings_section(findings: list[dict],
+                               title: str,
+                               colour: str) -> str:
+    """
+    Render one agent's findings as a titled HTML section.
+    Used by the combined report to separate SQLi from NoSQLi.
+    """
+    header = f"""
+    <div class="section-header"
+         style="background:{colour}; margin-top:28px;">
+        {title} ({len(findings)} finding(s))
+    </div>"""
+
+    if not findings:
+        return header + """
+    <div class="empty-section">
+        ✅ No vulnerabilities detected by this agent.
+    </div>"""
+
+    order    = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
+    sorted_f = sorted(
+        findings,
+        key=lambda f: order.get(f.get("severity", "LOW"), 9)
+    )
+
+    findings_html = ""
+    for i, f in enumerate(sorted_f, 1):
+        sev     = f.get("severity", "LOW")
+        col     = _severity_colour(sev)
+        bg      = _severity_bg(sev)
+        payload = f.get("payload", {})
+        pay_val = str(payload.get("value", ""))[:200]
+        tech    = payload.get("technique", "")
+
+        findings_html += f"""
+    <div class="finding"
+         style="border-left:4px solid {col}; background:{bg}">
+        <div class="finding-header" onclick="toggle(this)">
+            <span class="finding-sev" style="color:{col}">
+                ● {sev}
+            </span>
+            <span class="finding-title">
+                #{i} — {f.get('title', '')}
+            </span>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="finding-body">
+            <table class="detail-table">
+                <tr><td>URL</td>
+                    <td><code>{f.get('url','')}</code></td></tr>
+                <tr><td>Method</td>
+                    <td>{f.get('method','')}</td></tr>
+                <tr><td>Injection Point</td>
+                    <td><code>{f.get('inject_point','')}</code>
+                    </td></tr>
+                <tr><td>Technique</td><td>{tech}</td></tr>
+                <tr><td>Signal</td>
+                    <td>{f.get('signal','')}</td></tr>
+                <tr><td>Payload</td>
+                    <td><code class="payload">{pay_val}</code>
+                    </td></tr>
+                <tr><td>Evidence</td>
+                    <td>{f.get('evidence','')}</td></tr>
+                <tr><td>Status Code</td>
+                    <td>{f.get('status_code','')}</td></tr>
+                <tr><td>Response Time</td>
+                    <td>{f.get('response_time',0):.3f}s</td></tr>
+                <tr><td>Fix</td>
+                    <td class="fix-cell">
+                        {f.get('recommendation','')}
+                    </td></tr>
+            </table>
+        </div>
+    </div>"""
+
+    return header + findings_html

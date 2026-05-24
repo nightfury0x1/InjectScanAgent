@@ -25,7 +25,7 @@ source venv/bin/activate          # Linux / macOS
 pip install -r requirements.txt
 
 # 4. Run against a target
-python main.py --agent sqli --curl "curl -X POST http://target.com/api/login -H 'Content-Type: application/json' -d '{\"username\":\"admin\",\"password\":\"test\"}'"
+python InjectScanAgent.py --agent sqli --curl "curl -X POST http://target.com/api/login -H 'Content-Type: application/json' -d '{\"username\":\"admin\",\"password\":\"test\"}'"
 ```
 
 ---
@@ -49,7 +49,7 @@ python -m mock_server.app
 ## Usage
 
 ```
-python main.py --agent <sqli|nosqli|both>
+python InjectScanAgent.py --agent <sqli|nosqli|both>
                --curl <curl_string>       # single cURL command
                --collection <file.json>   # or a collection file
                [--output <path_prefix>]   # save JSON + HTML report
@@ -66,7 +66,7 @@ python main.py --agent <sqli|nosqli|both>
 
 **Single cURL — SQLi agent (Linux):**
 ```bash
-python main.py --agent sqli \
+python InjectScanAgent.py --agent sqli \
   --curl "curl -X POST http://127.0.0.1:5000/api/login \
   -H 'Content-Type: application/json' \
   -d '{\"username\":\"admin\",\"password\":\"x\"}'"
@@ -74,12 +74,12 @@ python main.py --agent sqli \
 
 **Collection file — NoSQLi agent:**
 ```bash
-python main.py --agent nosqli --collection collections/my_api.json
+python InjectScanAgent.py --agent nosqli --collection collections/my_api.json
 ```
 
 **Both agents with file output:**
 ```bash
-python main.py --agent both \
+python InjectScanAgent.py --agent both \
   --collection collections/my_api.json \
   --output results/scan_001 \
   --format both
@@ -87,7 +87,7 @@ python main.py --agent both \
 
 **External API with Bearer token and rate limiting:**
 ```bash
-python main.py --agent sqli \
+python InjectScanAgent.py --agent sqli \
   --collection collections/external_api.json \
   --auth-type bearer \
   --auth-value "eyJhbGci..." \
@@ -98,7 +98,7 @@ python main.py --agent sqli \
 
 **GraphQL endpoint:**
 ```bash
-python main.py --agent sqli \
+python InjectScanAgent.py --agent sqli \
   --curl "curl -X POST http://127.0.0.1:5000/graphql \
   -H 'Content-Type: application/json' \
   -d '{\"query\":\"query { sqlUser(id: \\\"1\\\") { id username } }\"}'"
@@ -194,7 +194,7 @@ pip install -r requirements-mock.txt
 python -m mock_server.app
 
 # In a second terminal — run a full scan
-python main.py --agent both \
+python InjectScanAgent.py --agent both \
   --collection collections/mock_full.json \
   --output results/demo_scan \
   --format both
@@ -246,7 +246,7 @@ injection_agents/
 │   ├── reporter.py          # Colour-coded terminal report
 │   └── file_reporter.py     # JSON and HTML file output
 ├── mock_server/             # Optional — demo vulnerable server
-├── main.py                  # Entry point
+├── InjectScanAgent.py                  # Entry point
 ├── requirements.txt         # Core dependencies
 └── requirements-mock.txt    # Mock server dependency
 ```
