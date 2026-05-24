@@ -102,6 +102,24 @@ def inject_single(request: dict, payload: dict,
             modified["body"][field] = payload_val
         else:
             modified["body"] = payload_val
+    
+    elif location == "path":
+        # Inject into a URL path segment by index
+        from urllib.parse import urlparse as _urlparse
+        parsed   = _urlparse(modified["url"])
+        parts    = parsed.path.split("/")
+        seg_idx  = int(field)
+        # Find the actual non-empty segment at this logical index
+        non_empty = [i for i, p in enumerate(parts) if p]
+        if seg_idx < len(non_empty):
+            actual_idx       = non_empty[seg_idx]
+            parts[actual_idx] = payload_val
+            new_path          = "/".join(parts)
+            modified["url"]   = (
+                f"{parsed.scheme}://{parsed.netloc}"
+                f"{new_path}"
+                + (f"?{parsed.query}" if parsed.query else "")
+            )
 
     elif location == "header":
         modified["headers"][field] = payload_val
@@ -164,6 +182,40 @@ def _inject_rest(request: dict, payloads: list[dict],
     for h in request.get("headers", {}):
         if h.lower() in suspicious_headers:
             points.append(("header", h))
+
+    # ── Path segment injection ────────────────────────────────
+    # Only inject into path segments that look like user-controlled
+    # values — not structural route components.
+    #
+    # A segment is injectable if it:
+    #   - Is not a version string (v1, v2, v3)
+    #   - Is not a known API prefix (users, books, api, etc.)
+    #   - Is not purely numeric (handled as ID — still injectable)
+    #   - Appears AFTER at least one version segment or known prefix
+    #     (meaning it is a parameter, not a route component)
+    from urllib.parse import urlparse as _urlparse
+    parsed_url   = _urlparse(request.get("url", ""))
+    path_parts   = [p for p in parsed_url.path.split("/") if p]
+    version_re   = re.compile(r'^v\d+$', re.IGNORECASE)
+
+    # Known structural route words — never user-controlled
+    route_words  = {
+        "api", "graphql", "gql", "rest", "users", "books",
+        "products", "orders", "login", "register", "auth",
+        "search", "find", "query", "v1", "v2", "v3",
+        "nosql", "sql", "health", "schema", "createdb",
+    }
+
+    # We only inject into a segment if it comes AFTER a version
+    # segment or route prefix — meaning it is a value, not a route
+    found_prefix = False
+    for i, part in enumerate(path_parts):
+        if version_re.match(part) or part.lower() in route_words:
+            found_prefix = True
+            continue
+        # Only inject after we have seen at least one prefix/version
+        if found_prefix:
+            points.append(("path", str(i)))
 
     # ── For NoSQLi auth-bypass — also try full body replacement ─
     full_body_payloads = [

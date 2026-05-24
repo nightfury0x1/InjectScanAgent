@@ -445,105 +445,6 @@ def print_banner():
 ╚══════════════════════════════════════════════════════════════╝{rs}
 """)
 
-
-# ─────────────────────────────────────────────────────────────
-# Demo collections creator
-# ─────────────────────────────────────────────────────────────
-
-def ensure_collections():
-    """Create demo collection files if they don't exist."""
-    import json
-    os.makedirs("collections", exist_ok=True)
-
-    full_path = "collections/mock_full.json"
-    if not os.path.exists(full_path):
-        full = [
-            {"name": "SQL Login", "method": "POST",
-             "url": "http://127.0.0.1:5000/api/login",
-             "headers": {"Content-Type": "application/json"},
-             "body": {"username": "admin", "password": "x"}},
-            {"name": "SQL Get User by ID", "method": "GET",
-             "url": "http://127.0.0.1:5000/api/users/1"},
-            {"name": "SQL Users Role Filter", "method": "GET",
-             "url": "http://127.0.0.1:5000/api/users",
-             "params": {"role": "user"}},
-            {"name": "SQL Product Search", "method": "GET",
-             "url": "http://127.0.0.1:5000/api/products/search",
-             "params": {"q": "phone"}},
-            {"name": "SQL Orders", "method": "GET",
-             "url": "http://127.0.0.1:5000/api/orders",
-             "params": {"user_id": "1"}},
-            {"name": "NoSQL Login", "method": "POST",
-             "url": "http://127.0.0.1:5000/api/nosql/login",
-             "headers": {"Content-Type": "application/json"},
-             "body": {"username": "admin", "password": "x"}},
-            {"name": "NoSQL User Lookup", "method": "GET",
-             "url": "http://127.0.0.1:5000/api/nosql/users",
-             "params": {"username": "alice"}},
-            {"name": "NoSQL Raw Find", "method": "POST",
-             "url": "http://127.0.0.1:5000/api/nosql/find",
-             "headers": {"Content-Type": "application/json"},
-             "body": {"role": "user"}},
-            {"name": "GraphQL SQL User", "method": "POST",
-             "url": "http://127.0.0.1:5000/graphql",
-             "headers": {"Content-Type": "application/json"},
-             "body": {"query": 'query { sqlUser(id: "1") { id username email } }'}},
-            {"name": "GraphQL SQL Login", "method": "POST",
-             "url": "http://127.0.0.1:5000/graphql",
-             "headers": {"Content-Type": "application/json"},
-             "body": {"query": 'query { sqlLogin(username: "admin", password: "x") { success username role } }'}},
-            {"name": "GraphQL SQL Search", "method": "POST",
-             "url": "http://127.0.0.1:5000/graphql",
-             "headers": {"Content-Type": "application/json"},
-             "body": {"query": 'query { sqlSearch(q: "phone") { id name price } }'}},
-            {"name": "GraphQL NoSQL Login", "method": "POST",
-             "url": "http://127.0.0.1:5000/graphql",
-             "headers": {"Content-Type": "application/json"},
-             "body": {"query": 'query { nosqlLogin(username: "admin", password: "x") { success username role } }'}},
-            {"name": "GraphQL NoSQL User", "method": "POST",
-             "url": "http://127.0.0.1:5000/graphql",
-             "headers": {"Content-Type": "application/json"},
-             "body": {"query": 'query { nosqlUser(username: "alice") { id username role } }'}},
-            {"name": "GraphQL NoSQL Find", "method": "POST",
-             "url": "http://127.0.0.1:5000/graphql",
-             "headers": {"Content-Type": "application/json"},
-             "body": {"query": 'query { nosqlFind(query: "{}", collection: "users") { id username role } }'}},
-        ]
-        with open(full_path, "w", encoding="utf-8") as f:
-            json.dump(full, f, indent=2)
-
-    for name, items in [
-        ("mock_rest_sqli.json", [
-            {"name": "SQL Login", "method": "POST",
-             "url": "http://127.0.0.1:5000/api/login",
-             "headers": {"Content-Type": "application/json"},
-             "body": {"username": "admin", "password": "x"}},
-            {"name": "SQL Get User by ID", "method": "GET",
-             "url": "http://127.0.0.1:5000/api/users/1"},
-            {"name": "SQL Product Search", "method": "GET",
-             "url": "http://127.0.0.1:5000/api/products/search",
-             "params": {"q": "phone"}},
-        ]),
-        ("mock_rest_nosql.json", [
-            {"name": "NoSQL Login", "method": "POST",
-             "url": "http://127.0.0.1:5000/api/nosql/login",
-             "headers": {"Content-Type": "application/json"},
-             "body": {"username": "admin", "password": "x"}},
-            {"name": "NoSQL User Lookup", "method": "GET",
-             "url": "http://127.0.0.1:5000/api/nosql/users",
-             "params": {"username": "alice"}},
-            {"name": "NoSQL Raw Find", "method": "POST",
-             "url": "http://127.0.0.1:5000/api/nosql/find",
-             "headers": {"Content-Type": "application/json"},
-             "body": {"role": "user"}},
-        ]),
-    ]:
-        path = f"collections/{name}"
-        if not os.path.exists(path):
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump(items, f, indent=2)
-
-
 # ─────────────────────────────────────────────────────────────
 # Main
 # ─────────────────────────────────────────────────────────────
@@ -581,9 +482,6 @@ def main():
     if args.output:
         print(f"  Output    : {args.output}_<agent>.json/html")
     print()
-
-    # ── Create demo collections ───────────────────────────────
-    ensure_collections()
 
     # ── External API safety check ─────────────────────────────
     if is_external_target(input_str):

@@ -1,15 +1,8 @@
 """
 collection_parser.py — Parse API collection files into request dicts.
 
-WHY THIS EXISTS?
-Real security testing rarely happens one endpoint at a time.
-Developers export their entire API as a Postman collection and
-want ALL endpoints scanned in one run.
-
-This parser reads a collection file and returns a list of request
-dicts in the exact same format that curl_parser.py produces.
-That means everything downstream (injector, analyser, reporter)
-works identically whether the input was a cURL or a collection.
+This parser reads a collection file and returns a list of request dicts in the exact same format that curl_parser.py produces.
+That means everything downstream (injector, analyser, reporter) works identically whether the input a cURL or a collection.
 
 SUPPORTED FORMATS:
 
