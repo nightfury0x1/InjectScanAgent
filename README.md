@@ -258,7 +258,7 @@ Pre-generated HTML scan reports are available in `sample_results/` for immediate
 | [`mock_gql_sqli_sqli.html`](https://htmlpreview.github.io/?https://github.com/nightfury0x1/InjectScanAgent/blob/main/sample_results/mock_gql_sqli_sqli.html) | SQLi agent on GraphQL endpoints |
 | [`mock_rest_nosqli_nosqli.html`](https://htmlpreview.github.io/?https://github.com/nightfury0x1/InjectScanAgent/blob/main/sample_results/mock_rest_nosqli_nosqli.html) | NoSQLi agent on REST endpoints |
 | [`mock_full_both_combined.html`](https://htmlpreview.github.io/?https://github.com/nightfury0x1/InjectScanAgent/blob/main/sample_results/mock_full_both_combined.html) | Both agents — full combined report |
-| [`vampi_sqli_sqli.html`](https://htmlpreview.github.io/?https://github.com/nightfury0x1/InjectScanAgent/blob/main/sample_results/vampi_sqli_sqli.html) | SQLi agent on VAmPI (Intentionally vulnerable API) |
+| [`vampi_sqli_sqli_sqli.html`](https://htmlpreview.github.io/?https://github.com/nightfury0x1/InjectScanAgent/blob/main/sample_results/vampi_sqli_sqli_sqli.html) | SQLi agent on VAmPI (Intentionally vulnerable API) |
 | [`vampi_both_combined.html`](https://htmlpreview.github.io/?https://github.com/nightfury0x1/InjectScanAgent/blob/main/sample_results/vampi_both_combined.html) | Both agents on VAmPI |
 
 ---
