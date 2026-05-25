@@ -33,6 +33,8 @@ InjectScanAgent/
 └── requirements-mock.txt    # Mock server dependency
 ```
 
+---
+
 ## Quick Start
 
 ```bash
@@ -252,12 +254,12 @@ Pre-generated HTML scan reports are available in `sample_results/` for immediate
 
 | File | Description |
 |---|---|
-| `mock_rest_sqli_sqli.html` | SQLi agent on REST endpoints |
-| `mock_gql_sqli_sqli.html` | SQLi agent on GraphQL endpoints |
-| `mock_rest_nosqli_nosqli.html` | NoSQLi agent on REST endpoints |
-| `mock_full_both_combined.html` | Both agents — full combined report |
-| `vampi_sqli_sqli.html` | SQLi agent on VAmPI (Intentionally vulnerable API) |
-| `vampi_both_combined.html` | Both agents on VAmPI |
+| [`mock_rest_sqli_sqli.html`](https://htmlpreview.github.io/?https://github.com/yourusername/InjectScanAgent/blob/main/sample_results/mock_rest_sqli_sqli.html){:target="_blank"} | SQLi agent on REST endpoints |
+| [`mock_gql_sqli_sqli.html`](https://htmlpreview.github.io/?https://github.com/yourusername/InjectScanAgent/blob/main/sample_results/mock_gql_sqli_sqli.html){:target="_blank"} | SQLi agent on GraphQL endpoints |
+| [`mock_rest_nosqli_nosqli.html`](https://htmlpreview.github.io/?https://github.com/yourusername/InjectScanAgent/blob/main/sample_results/mock_rest_nosqli_nosqli.html){:target="_blank"} | NoSQLi agent on REST endpoints |
+| [`mock_full_both_combined.html`](https://htmlpreview.github.io/?https://github.com/yourusername/InjectScanAgent/blob/main/sample_results/mock_full_both_combined.html){:target="_blank"} | Both agents — full combined report |
+| [`vampi_sqli_sqli.html`](https://htmlpreview.github.io/?https://github.com/yourusername/InjectScanAgent/blob/main/sample_results/vampi_sqli_sqli.html){:target="_blank"} | SQLi agent on VAmPI (Intentionally vulnerable API) |
+| [`vampi_both_combined.html`](https://htmlpreview.github.io/?https://github.com/yourusername/InjectScanAgent/blob/main/sample_results/vampi_both_combined.html){:target="_blank"} | Both agents on VAmPI |
 
 ---
 
